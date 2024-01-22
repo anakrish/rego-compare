@@ -1,0 +1,18 @@
+# MIT License
+# Copyright (c) 2024 Anand Krishnamoorthi
+
+# Source folders
+opa*
+regorus*
+rego-cpp*
+
+# Generates sources
+simple.rego
+
+# Generated binaries
+bin/*
+
+# Generated markdowns
+simple.md
+example.md
+aci*.md

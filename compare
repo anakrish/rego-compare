@@ -1,0 +1,144 @@
+#!/bin/bash
+# MIT License
+# Copyright (c) 2024 Anand Krishnamoorthi
+set -e
+
+if ! command -v hyperfine > /dev/null; then
+    cargo install hyperfine
+fi
+
+
+if [ ! -d "regorus" ]; then
+    echo "Cloning and regorus"
+    git clone https://github.com/microsoft/regorus -b v0.1.0-alpha.2
+fi
+
+if [ ! -d "opa" ]; then
+    echo "Cloning opa"
+    git clone https://github.com/open-policy-agent/opa -b v0.60.0 --single-branch
+fi
+
+if [ ! -d "rego-cpp" ]; then
+    echo "Cloning rego-cpp"
+    (
+	git clone https://github.com/microsoft/rego-cpp
+	cd rego-cpp && git checkout 6d84fc70b67e3a3c3c7783ac28a17f957fb4174a
+    )
+fi
+
+
+mkdir -p bin
+
+if [ "$OSTYPE" == "linux" ]; then
+    TARGET="--target x86_64-unknown-linux-musl"
+    TARGET_DIR="target/$TARGET"
+else
+    TARGET=""
+    TARGET_DIR="target"
+fi
+
+
+if [ ! -f bin/regorus ]; then
+    (
+	echo "Building regorus"
+	cd regorus
+	eval "cargo build -r --example regorus $TARGET --no-default-features --features 'regex, semver, yaml'"
+	cp "$TARGET_DIR/release/examples/regorus" ../bin/regorus-slim
+	eval "cargo build -r --example regorus $TARGET"
+	cp "$TARGET_DIR/release/examples/regorus" ../bin/regorus
+
+	strip ../bin/regorus-slim
+	strip ../bin/regorus
+    )
+fi
+
+if [ ! -f bin/opa ]; then
+    (
+	echo "Building opa"
+	cd opa
+	go build
+	cp opa ../bin/opa
+	strip ../bin/opa
+    )
+fi
+
+if [ ! -f bin/rego ]; then
+    (
+	echo "Building rego-cpp"
+	mkdir -p rego-cpp/build
+	cd rego-cpp/build
+	cmake -G Ninja .. --preset release-clang-opa
+	ninja install
+	cp dist/bin/rego ../../bin/rego
+	if [ "$OSTYPE" == "linux" ]; then
+	    # Stripped executable on mac crashes. Hence strip only on Linux.
+	    strip ../../bin/rego
+	fi
+    )
+fi
+
+
+# Create simple.rego
+printf "package test\nallow=true" > simple.rego
+
+diff <(bin/opa          eval -d simple.rego data) \
+     <(bin/regorus-slim eval -d simple.rego data)
+
+
+printf "\n\n"
+echo "############################## SIMPLE  ##############################"
+hyperfine -r 100 --export-markdown simple.md\
+     -n "Simple policy using OPA"             "bin/opa           eval -d simple.rego data" \
+     -n "Simple policy using REGORUS"         "bin/regorus       eval -d simple.rego data" \
+     -n "Simple policy using REGORUS-SLIM"    "bin/regorus-slim  eval -d simple.rego data" \
+     -n "Simple policy using REGO-CPP"        "bin/rego               -d simple.rego data"
+
+
+
+
+printf "\n\n"
+echo "############################## EXAMPLE  ##############################"
+cmd="-d regorus/examples/example.rego -i regorus/examples/input.json "
+
+# Ensure that Regorus and OPA produce same output
+diff <(eval "bin/opa          eval $cmd data") \
+     <(eval "bin/regorus-slim eval $cmd data")
+
+hyperfine -r 100 --export-markdown example.md  \
+     -n "Example policy using OPA"             "bin/opa           eval $cmd data" \
+     -n "Example policy using REGORUS"         "bin/regorus       eval $cmd data" \
+     -n "Example policy using REGORUS-SLIM"    "bin/regorus-slim  eval $cmd data" \
+     -n "Example policy using REGO-CPP"        "bin/rego               $cmd data"
+
+
+cmd="-d regorus/tests/aci/framework.rego  -d regorus/tests/aci/api.rego -d regorus/tests/aci/policy.rego  -d regorus/tests/aci/data.json -i regorus/tests/aci/input.json "
+
+printf "\n\n"
+echo "############################## ACI : data.framework.mount_overlay  ##############################"
+# Ensure that Regorus and OPA produce same output
+diff <(eval "bin/opa          eval $cmd data") \
+     <(eval "bin/regorus-slim eval $cmd data")
+
+
+hyperfine -r 100 --export-markdown aci.data.framework.mount_overlay.md \
+     -n "ACI policy; data.framework.mount_overlay using OPA"            "bin/opa           eval $cmd data.framework.mount_overlay" \
+     -n "ACI policy; data.framework.mount_overlay using REGORUS"        "bin/regorus       eval $cmd data.framework.mount_overlay" \
+     -n "ACI policy; data.framework.mount_overlay using REGORUS-SLIM"   "bin/regorus-slim  eval $cmd data.framework.mount_overlay" \
+     -n "ACI policy; data.framework.mount_overlay using REGO-CPP"       "bin/rego               $cmd data.framework.mount_overlay"
+
+printf "\n\n"
+echo "############################## ACI : data.framework  ##############################"
+hyperfine -r 100 --export-markdown aci.data.framework.md \
+     -n "ACI policy; data.framework using OPA"            "bin/opa           eval $cmd data.framework" \
+     -n "ACI policy; data.framework using REGORUS"        "bin/regorus       eval $cmd data.framework" \
+     -n "ACI policy; data.framework using REGORUS-SLIM"   "bin/regorus-slim  eval $cmd data.framework" \
+     -n "ACI policy; data.framework using REGO-CPP"       "bin/rego               $cmd data.framework"
+
+
+printf "\n\n"
+echo "############################## ACI : data  ##############################"
+hyperfine -r 100 --export-markdown aci.data.md \
+     -n "ACI policy; data using OPA"            "bin/opa           eval $cmd data" \
+     -n "ACI policy; data using REGORUS"        "bin/regorus       eval $cmd data" \
+     -n "ACI policy; data using REGORUS-SLIM"   "bin/regorus-slim  eval $cmd data" \
+     -n "ACI policy; data using REGO-CPP"       "bin/rego               $cmd data"

@@ -95,12 +95,8 @@ func makeRego(info *Info) (*rego.PreparedEvalQuery, error) {
 
 func profile(info *Info, query *rego.PreparedEvalQuery, show bool) (int64, error) {
 	ctx := context.Background()
-	rs, err := query.Eval(ctx, rego.EvalInput(nil))
-	if err != nil {
-		return 0, err
-	}
 	start := time.Now()
-	rs, err = query.Eval(ctx, rego.EvalInput(info.Input))
+	rs, err := query.Eval(ctx, rego.EvalInput(info.Input))
 	if err != nil {
 		return 0, err
 	}

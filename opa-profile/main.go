@@ -5,6 +5,7 @@ import (
 	"github.com/open-policy-agent/opa/ast"
 	"github.com/open-policy-agent/opa/storage/inmem"
 	"github.com/open-policy-agent/opa/rego"
+	"github.com/open-policy-agent/opa/util"
 	
 	"encoding/json"
 	"errors"
@@ -95,8 +96,10 @@ func makeRego(info *Info) (*rego.PreparedEvalQuery, error) {
 
 func profile(info *Info, query *rego.PreparedEvalQuery, show bool) (int64, error) {
 	ctx := context.Background()
+	rawPtr := util.Reference(info.Input)
+	parsedInput, _ := ast.InterfaceToValue(*rawPtr)
 	start := time.Now()
-	rs, err := query.Eval(ctx, rego.EvalInput(info.Input))
+	rs, err := query.Eval(ctx, rego.EvalParsedInput(parsedInput))
 	if err != nil {
 		return 0, err
 	}

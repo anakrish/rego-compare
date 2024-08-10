@@ -13,18 +13,24 @@ cp opa-profile/opa-profile bin/
 echo "Testing example policy"
 echo -n "evaluating data.example.allow using OPA "
 bin/opa-profile -d policies/example/example.rego -i policies/example/input.json -n 100000 data.example.allow
+echo -n "evaluating data.example.allow using OPA (fresh instance each time) "
+bin/opa-profile -d policies/example/example.rego -i policies/example/input.json -n 100000 -f data.example.allow
 
 echo -n "evaluating data.example.allow using regorus eval-rule "
 bin/regorus-profile -d policies/example/example.rego -i policies/example/input.json -n 100000 -r data.example.allow
 
 echo -n "evaluating data.example using OPA "
 bin/opa-profile -d policies/example/example.rego -i policies/example/input.json -n 100000 data.example
+echo -n "evaluating data.example using OPA (fresh instance each time) "
+bin/opa-profile -d policies/example/example.rego -i policies/example/input.json -n 100000 -f data.example
 
 echo -n "evaluating data.example using regorus eval-query "
 bin/regorus-profile -d policies/example/example.rego -i policies/example/input.json -n 100000 -q data.example
 
 echo -n "evaluating data using OPA "
 bin/opa-profile -d policies/example/example.rego -i policies/example/input.json -n 100000 data
+echo -n "evaluating data using OPA (fresh instance each time) "
+bin/opa-profile -d policies/example/example.rego -i policies/example/input.json -n 100000 -f data
 
 echo -n "evaluating data using regorus eval-query "
 bin/regorus-profile -d policies/example/example.rego -i policies/example/input.json -n 100000 -q data
@@ -34,19 +40,25 @@ echo ""
 echo ""
 echo "Testing ACI policy"
 echo -n "evaluating data.framework.mount_overlay using OPA "
-bin/opa-profile -d policies/aci/framework.rego -d policies/aci/policy.rego -d policies/aci/api.rego -d policies/aci/data.json -i policies/aci/input.json -n 100000 data.framework.mount_overlay
+bin/opa-profile -d policies/aci/framework.rego -d policies/aci/policy.rego -d policies/aci/api.rego -d policies/aci/data.json -i policies/aci/input.json -n 10000 data.framework.mount_overlay
+echo -n "evaluating data.framework.mount_overlay using OPA (fresh instance each time) "
+bin/opa-profile -d policies/aci/framework.rego -d policies/aci/policy.rego -d policies/aci/api.rego -d policies/aci/data.json -i policies/aci/input.json -n 10000 -f data.framework.mount_overlay
 
 echo -n "evaluating data.framework.mount_overlay using regorus eval-rule "
 bin/regorus-profile -d policies/aci/framework.rego -d policies/aci/policy.rego -d policies/aci/api.rego -d policies/aci/data.json -i policies/aci/input.json -n 100000 -r data.framework.mount_overlay
 
 echo -n "evaluating data.framework using OPA "
-bin/opa-profile -d policies/aci/framework.rego -d policies/aci/policy.rego -d policies/aci/api.rego -d policies/aci/data.json -i policies/aci/input.json -n 100000 data.framework
+bin/opa-profile -d policies/aci/framework.rego -d policies/aci/policy.rego -d policies/aci/api.rego -d policies/aci/data.json -i policies/aci/input.json -n 10000 data.framework
+echo -n "evaluating data.framework using OPA (fresh instance each time) "
+bin/opa-profile -d policies/aci/framework.rego -d policies/aci/policy.rego -d policies/aci/api.rego -d policies/aci/data.json -i policies/aci/input.json -n 10000 -f data.framework
 
 echo -n "evaluating data.framework using regorus eval-query "
 bin/regorus-profile -d policies/aci/framework.rego -d policies/aci/policy.rego -d policies/aci/api.rego -d policies/aci/data.json -i policies/aci/input.json -n 100000 -q data.framework
 
 echo -n "evaluating data using OPA "
-bin/opa-profile -d policies/aci/framework.rego -d policies/aci/policy.rego -d policies/aci/api.rego -d policies/aci/data.json -i policies/aci/input.json -n 100000 data
+bin/opa-profile -d policies/aci/framework.rego -d policies/aci/policy.rego -d policies/aci/api.rego -d policies/aci/data.json -i policies/aci/input.json -n 10000 data
+echo -n "evaluating data using OPA (fresh instance each time) "
+bin/opa-profile -d policies/aci/framework.rego -d policies/aci/policy.rego -d policies/aci/api.rego -d policies/aci/data.json -i policies/aci/input.json -n 10000 -f data
 
 echo -n "evaluating data using regorus eval-query "
 bin/regorus-profile -d policies/aci/framework.rego -d policies/aci/policy.rego -d policies/aci/api.rego -d policies/aci/data.json -i policies/aci/input.json -n 100000 -q data

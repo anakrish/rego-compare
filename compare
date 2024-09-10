@@ -10,19 +10,19 @@ fi
 
 if [ ! -d "regorus" ]; then
     echo "Cloning and regorus"
-    git clone https://github.com/microsoft/regorus -b v0.1.0-alpha.2
+    git clone https://github.com/microsoft/regorus
 fi
 
 if [ ! -d "opa" ]; then
     echo "Cloning opa"
-    git clone https://github.com/open-policy-agent/opa -b v0.60.0 --single-branch
+    git clone https://github.com/open-policy-agent/opa -b v0.68.0 --single-branch
 fi
 
 if [ ! -d "rego-cpp" ]; then
     echo "Cloning rego-cpp"
     (
 	git clone https://github.com/microsoft/rego-cpp
-	cd rego-cpp && git checkout 6d84fc70b67e3a3c3c7783ac28a17f957fb4174a
+	cd rego-cpp
     )
 fi
 
@@ -42,7 +42,7 @@ if [ ! -f bin/regorus ]; then
     (
 	echo "Building regorus"
 	cd regorus
-	eval "cargo build -r --example regorus $TARGET --no-default-features --features 'regex, semver, yaml'"
+	eval "cargo build -r --example regorus $TARGET --no-default-features --features 'regex, semver, std, yaml'"
 	cp "$TARGET_DIR/release/examples/regorus" ../bin/regorus-slim
 	eval "cargo build -r --example regorus $TARGET"
 	cp "$TARGET_DIR/release/examples/regorus" ../bin/regorus
@@ -98,7 +98,7 @@ hyperfine -r 100 --export-markdown simple.md\
 
 printf "\n\n"
 echo "############################## EXAMPLE  ##############################"
-cmd="-d regorus/examples/example.rego -i regorus/examples/input.json "
+cmd="-d regorus/examples/server/allowed_server.rego -i regorus/examples/server/input.json "
 
 # Ensure that Regorus and OPA produce same output
 diff <(eval "bin/opa          eval $cmd data") \
